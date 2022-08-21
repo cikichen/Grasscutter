@@ -1,7 +1,15 @@
 package emu.grasscutter.plugin.api;
 
+import emu.grasscutter.Grasscutter;
+import emu.grasscutter.auth.AuthenticationSystem;
+import emu.grasscutter.command.Command;
+import emu.grasscutter.command.CommandHandler;
+import emu.grasscutter.command.CommandMap;
+import emu.grasscutter.command.PermissionHandler;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.server.game.GameServer;
+import emu.grasscutter.server.http.HttpServer;
+import emu.grasscutter.server.http.Router;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +19,8 @@ import java.util.List;
  */
 public final class ServerHook {
     private static ServerHook instance;
-    private final GameServer server;
+    private final GameServer gameServer;
+    private final HttpServer httpServer;
 
     /**
      * Gets the server hook instance.
@@ -23,12 +32,28 @@ public final class ServerHook {
 
     /**
      * Hooks into a server.
-     * @param server The server to hook into.
+     * @param gameServer The game server to hook into.
+     * @param httpServer The HTTP server to hook into.
      */
-    public ServerHook(GameServer server) {
-        this.server = server;
-        
+    public ServerHook(GameServer gameServer, HttpServer httpServer) {
+        this.gameServer = gameServer;
+        this.httpServer = httpServer;
+
         instance = this;
+    }
+
+    /**
+     * @return The game server.
+     */
+    public GameServer getGameServer() {
+        return this.gameServer;
+    }
+
+    /**
+     * @return The HTTP server.
+     */
+    public HttpServer getHttpServer() {
+        return this.httpServer;
     }
 
     /**
@@ -36,6 +61,50 @@ public final class ServerHook {
      * @return Players connected to the server.
      */
     public List<Player> getOnlinePlayers() {
-        return new LinkedList<>(this.server.getPlayers().values());
+        return new LinkedList<>(this.gameServer.getPlayers().values());
+    }
+
+    /**
+     * Registers a command to the {@link emu.grasscutter.command.CommandMap}.
+     * @param handler The command handler.
+     */
+    public void registerCommand(CommandHandler handler) {
+        Class<? extends CommandHandler> clazz = handler.getClass();
+        if (!clazz.isAnnotationPresent(Command.class))
+            throw new IllegalArgumentException("Command handler must be annotated with @Command.");
+        Command commandData = clazz.getAnnotation(Command.class);
+        CommandMap.getInstance().registerCommand(commandData.label(), handler);
+    }
+
+    /**
+     * Adds a router using an instance of a class.
+     * @param router A router instance.
+     */
+    public void addRouter(Router router) {
+        this.addRouter(router.getClass());
+    }
+
+    /**
+     * Adds a router using a class.
+     * @param router The class of the router.
+     */
+    public void addRouter(Class<? extends Router> router) {
+        this.httpServer.addRouter(router);
+    }
+
+    /**
+     * Sets the server's authentication system.
+     * @param authSystem An instance of the authentication system.
+     */
+    public void setAuthSystem(AuthenticationSystem authSystem) {
+        Grasscutter.setAuthenticationSystem(authSystem);
+    }
+
+    /**
+     * Sets the server's permission handler.
+     * @param permHandler An instance of the permission handler.
+     */
+    public void setPermissionHandler(PermissionHandler permHandler) {
+        Grasscutter.setPermissionHandler(permHandler);
     }
 }

@@ -3,21 +3,17 @@ package emu.grasscutter.command.commands;
 import emu.grasscutter.command.Command;
 import emu.grasscutter.command.CommandHandler;
 import emu.grasscutter.game.player.Player;
+import emu.grasscutter.utils.Position;
 
 import java.util.List;
 
-@Command(label = "position", usage = "position", aliases = {"pos"},
-        description = "Get coordinates.")
+@Command(label = "position", aliases = {"pos"})
 public final class PositionCommand implements CommandHandler {
 
     @Override
-    public void execute(Player sender, List<String> args) {
-        if (sender == null) {
-            CommandHandler.sendMessage(null, "Run this command in-game.");
-            return;
-        }
-
-        sender.dropMessage(String.format("Coord: %.3f, %.3f, %.3f\nScene id: %d",
-                sender.getPos().getX(), sender.getPos().getY(), sender.getPos().getZ(), sender.getSceneId()));
+    public void execute(Player sender, Player targetPlayer, List<String> args) {
+        Position pos = targetPlayer.getPosition();
+        CommandHandler.sendTranslatedMessage(sender, "commands.position.success",
+                pos.getX(), pos.getY(), pos.getZ(), targetPlayer.getSceneId());
     }
 }
